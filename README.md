@@ -19,7 +19,7 @@ Requiere Node.js 22 o superior y Docker.
 ```bash
 cp .env.example .env
 npm install
-docker compose up -d postgres
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d postgres
 npm run prisma:deploy -w @intelekia/api
 npm run build -w @intelekia/shared
 npm run prisma:seed -w @intelekia/api
@@ -48,7 +48,7 @@ Desde otro teléfono en la misma red abre el panel con la IP de esta máquina, p
 El archivo `docker-compose.yml` levanta Postgres, la API y el sitio. En esta máquina:
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
 ```
 
 El sitio queda en http://localhost:8080. Para el VPS, define las variables de `docker/compose.env.example` en EasyPanel y copia los tres PEM a `docker/certs/`. La guía está en [docs/DEPLOY-EASYPANEL.md](docs/DEPLOY-EASYPANEL.md).

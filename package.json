@@ -11,7 +11,7 @@
     "build": "npm run build -w @intelekia/shared && npm run build -w @intelekia/api && npm run build -w @intelekia/web",
     "test": "npm run test -w @intelekia/api",
     "test:e2e": "npm run test:e2e -w @intelekia/api",
-    "db:up": "docker compose up -d postgres",
+    "db:up": "docker compose -f docker-compose.yml -f docker-compose.local.yml up -d postgres",
     "db:migrate": "npm run prisma:migrate -w @intelekia/api",
     "db:seed": "npm run prisma:seed -w @intelekia/api",
     "db:setup": "npm run db:up && npm run prisma:deploy -w @intelekia/api && npm run db:seed"

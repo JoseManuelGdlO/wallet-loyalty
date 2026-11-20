@@ -6,8 +6,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-loyalty}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-loyalty}
       POSTGRES_DB: ${POSTGRES_DB:-loyalty}
-    ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -70,8 +68,8 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    ports:
-      - "${WEB_PORT:-8080}:80"
+    expose:
+      - "80"
 
 volumes:
   pgdata:

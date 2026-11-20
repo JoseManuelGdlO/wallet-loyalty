@@ -16,7 +16,6 @@ En producción define al menos:
 
 ```text
 POSTGRES_PASSWORD=una-clave-solo-letras-y-numeros
-WEB_PORT=80
 DOCKER_WEB_ORIGIN=https://loyalty.intelekia.cloud
 DOCKER_PUBLIC_BASE_URL=https://loyalty.intelekia.cloud
 DOCKER_PUBLIC_WEB_URL=https://loyalty.intelekia.cloud
@@ -50,7 +49,7 @@ El contenedor los lee en `/certs`. Si esa carpeta está vacía, el sello se guar
 3. El contenedor del API ejecuta `prisma migrate deploy` al arrancar.
 4. En el proxy de EasyPanel publica solo el servicio `web`, puerto 80. Nginx reenvía `/api` al contenedor `api` y conserva el HTTPS del proxy.
 5. Comprueba `https://tu-dominio/api/health`. Debe responder `{ "status": "ok" }`.
-6. Postgres queda publicado solo en `127.0.0.1` del servidor. No lo abras a internet.
+6. Postgres no publica puertos en el servidor. La API se conecta por el nombre `postgres` dentro de la red de Compose. El sitio entra solo por el dominio, hacia el puerto 80 del servicio `web`.
 
 El disco de `uploads` sirve logos de un solo nodo. Si más adelante hay varias réplicas, mueve las imágenes a un almacén de objetos.
 
