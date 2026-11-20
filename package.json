@@ -1,0 +1,22 @@
+{
+  "name": "intelekia-loyalty",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n shared,api,web -c blue,green,magenta \"npm run dev -w @intelekia/shared\" \"npm run dev -w @intelekia/api\" \"npm run dev -w @intelekia/web\"",
+    "build": "npm run build -w @intelekia/shared && npm run build -w @intelekia/api && npm run build -w @intelekia/web",
+    "test": "npm run test -w @intelekia/api",
+    "test:e2e": "npm run test:e2e -w @intelekia/api",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "npm run prisma:migrate -w @intelekia/api",
+    "db:seed": "npm run prisma:seed -w @intelekia/api",
+    "db:setup": "npm run db:up && npm run prisma:deploy -w @intelekia/api && npm run db:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

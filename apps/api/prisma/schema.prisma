@@ -1,0 +1,378 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum RoleCode {
+  SUPER_ADMIN
+  BUSINESS_ADMIN
+  EMPLOYEE
+  CUSTOMER
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum ProgramStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum CardStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum StampOperationType {
+  EARN
+  REDEEM
+  REVERSAL
+}
+
+enum RedemptionStatus {
+  COMPLETED
+  REVERSED
+}
+
+enum WalletProvider {
+  APPLE
+  GOOGLE
+}
+
+model SubscriptionPlan {
+  id                String   @id @default(cuid())
+  code              String   @unique
+  name              String
+  description       String
+  maxBusinesses     Int
+  maxCustomers      Int
+  maxPrograms       Int
+  monthlyPriceCents Int
+  active            Boolean  @default(true)
+  tenants           Tenant[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("subscription_plans")
+}
+
+model Tenant {
+  id         String           @id @default(cuid())
+  name       String
+  status     TenantStatus     @default(ACTIVE)
+  planId     String
+  plan       SubscriptionPlan @relation(fields: [planId], references: [id])
+  businesses Business[]
+  users      User[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([status])
+  @@map("tenants")
+}
+
+model Business {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
+  name            String
+  slug            String    @unique
+  description     String?
+  logoUrl         String?
+  primaryColor    String    @default("#102033")
+  secondaryColor  String    @default("#A56B2A")
+  phone           String?
+  address         String?
+  timezone        String    @default("America/Mexico_City")
+  active          Boolean   @default(true)
+  branches        Branch[]
+  programs        LoyaltyProgram[]
+  customers       Customer[]
+  users           User[]
+  cards           LoyaltyCard[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@map("businesses")
+}
+
+model Branch {
+  id           String              @id @default(cuid())
+  tenantId     String
+  businessId   String
+  business     Business            @relation(fields: [businessId], references: [id])
+  name         String
+  address      String?
+  active       Boolean             @default(true)
+  users        User[]
+  stamps       StampTransaction[]
+  redemptions  RewardRedemption[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([tenantId, businessId])
+  @@map("branches")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  code        RoleCode @unique
+  name        String
+  description String
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  id            String               @id @default(cuid())
+  tenantId      String?
+  tenant        Tenant?              @relation(fields: [tenantId], references: [id])
+  businessId    String?
+  business      Business?            @relation(fields: [businessId], references: [id])
+  branchId      String?
+  branch        Branch?              @relation(fields: [branchId], references: [id])
+  roleId        String
+  role          Role                 @relation(fields: [roleId], references: [id])
+  email         String               @unique
+  passwordHash  String
+  name          String
+  status        UserStatus           @default(ACTIVE)
+  refreshTokens RefreshToken[]
+  stamps        StampTransaction[]
+  redemptions   RewardRedemption[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([tenantId, businessId])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Customer {
+  id           String               @id @default(cuid())
+  tenantId     String
+  businessId   String
+  business     Business             @relation(fields: [businessId], references: [id])
+  name         String
+  email        String?
+  phone        String?
+  cards        LoyaltyCard[]
+  stamps       StampTransaction[]
+  redemptions  RewardRedemption[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([businessId, email])
+  @@unique([businessId, phone])
+  @@index([tenantId, businessId])
+  @@map("customers")
+}
+
+model LoyaltyProgram {
+  id                       String              @id @default(cuid())
+  tenantId                 String
+  businessId               String
+  business                 Business            @relation(fields: [businessId], references: [id])
+  name                     String
+  description              String?
+  stampsRequired           Int
+  rewardTitle              String
+  rewardDescription        String?
+  rewardImageUrl           String?
+  stampIcon                String              @default("●")
+  cardBackground           String              @default("#102033")
+  cardForeground           String              @default("#F4F7F8")
+  cardLabel                String              @default("#E0B15A")
+  startsAt                 DateTime?
+  endsAt                   DateTime?
+  status                   ProgramStatus       @default(ACTIVE)
+  maxStampsPerDay          Int                 @default(5)
+  cooldownSeconds          Int                 @default(90)
+  blockWhenRewardAvailable Boolean             @default(true)
+  rewards                  Reward[]
+  cards                    LoyaltyCard[]
+  stamps                   StampTransaction[]
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+
+  @@index([tenantId, businessId])
+  @@map("loyalty_programs")
+}
+
+model LoyaltyCard {
+  id                    String              @id @default(cuid())
+  tenantId              String
+  businessId            String
+  business              Business            @relation(fields: [businessId], references: [id])
+  customerId            String
+  customer              Customer            @relation(fields: [customerId], references: [id])
+  programId             String
+  program               LoyaltyProgram      @relation(fields: [programId], references: [id])
+  publicTokenHash       String              @unique
+  publicTokenEncrypted  String
+  currentStamps         Int                 @default(0)
+  cycle                 Int                 @default(1)
+  rewardAvailable       Boolean             @default(false)
+  status                CardStatus          @default(ACTIVE)
+  version               Int                 @default(1)
+  lockVersion           Int                 @default(0)
+  lastStampAt           DateTime?
+  transactions          StampTransaction[]
+  walletPasses          WalletPass[]
+  redemptions           RewardRedemption[]
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@unique([customerId, programId])
+  @@index([tenantId, businessId])
+  @@index([businessId, rewardAvailable])
+  @@map("loyalty_cards")
+}
+
+model StampTransaction {
+  id             String             @id @default(cuid())
+  tenantId       String
+  businessId     String
+  branchId       String?
+  branch         Branch?            @relation(fields: [branchId], references: [id])
+  customerId     String
+  customer       Customer           @relation(fields: [customerId], references: [id])
+  cardId         String
+  card           LoyaltyCard        @relation(fields: [cardId], references: [id])
+  programId      String
+  program        LoyaltyProgram     @relation(fields: [programId], references: [id])
+  employeeId     String
+  employee       User               @relation(fields: [employeeId], references: [id])
+  type           StampOperationType
+  stampsDelta    Int
+  balanceAfter   Int
+  cycle          Int
+  idempotencyKey String
+  reversesId     String?            @unique
+  createdAt      DateTime           @default(now())
+
+  @@unique([businessId, idempotencyKey])
+  @@index([cardId, createdAt])
+  @@index([tenantId, createdAt])
+  @@index([businessId, createdAt])
+  @@map("stamp_transactions")
+}
+
+model Reward {
+  id          String              @id @default(cuid())
+  tenantId    String
+  businessId  String
+  programId   String
+  program     LoyaltyProgram      @relation(fields: [programId], references: [id])
+  title       String
+  description String?
+  imageUrl    String?
+  active      Boolean             @default(true)
+  redemptions RewardRedemption[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([programId])
+  @@map("rewards")
+}
+
+model RewardRedemption {
+  id             String           @id @default(cuid())
+  tenantId       String
+  businessId     String
+  branchId       String?
+  branch         Branch?          @relation(fields: [branchId], references: [id])
+  rewardId       String
+  reward         Reward           @relation(fields: [rewardId], references: [id])
+  cardId         String
+  card           LoyaltyCard      @relation(fields: [cardId], references: [id])
+  customerId     String
+  customer       Customer         @relation(fields: [customerId], references: [id])
+  employeeId     String
+  employee       User             @relation(fields: [employeeId], references: [id])
+  cycle          Int
+  status         RedemptionStatus @default(COMPLETED)
+  idempotencyKey String
+  createdAt      DateTime         @default(now())
+
+  @@unique([businessId, idempotencyKey])
+  @@index([cardId])
+  @@index([tenantId, createdAt])
+  @@map("reward_redemptions")
+}
+
+model WalletPass {
+  id                 String                     @id @default(cuid())
+  cardId             String
+  card               LoyaltyCard                @relation(fields: [cardId], references: [id])
+  provider           WalletProvider
+  serialNumber       String                     @unique
+  authTokenHash      String?
+  authTokenEncrypted String?
+  googleObjectId     String?
+  googleClassId      String?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  devices            WalletDeviceRegistration[]
+
+  @@unique([cardId, provider])
+  @@index([serialNumber])
+  @@map("wallet_passes")
+}
+
+model WalletDeviceRegistration {
+  id                      String     @id @default(cuid())
+  walletPassId            String
+  walletPass              WalletPass @relation(fields: [walletPassId], references: [id], onDelete: Cascade)
+  deviceLibraryIdentifier String
+  pushToken               String
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+
+  @@unique([walletPassId, deviceLibraryIdentifier])
+  @@index([deviceLibraryIdentifier])
+  @@index([pushToken])
+  @@map("wallet_device_registrations")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String?
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([entityType, entityId])
+  @@map("audit_logs")
+}

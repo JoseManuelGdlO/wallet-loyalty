@@ -1,0 +1,22 @@
+import { Buffer } from "buffer";
+
+process.env.NODE_ENV = "test";
+process.env.DATABASE_URL = "postgresql://loyalty:loyalty@localhost:5432/loyalty_test";
+process.env.JWT_ACCESS_SECRET = "test-access-secret-0123456789abcdef";
+process.env.JWT_REFRESH_SECRET = "test-refresh-secret-0123456789abcdef";
+process.env.APP_ENCRYPTION_KEY = Buffer.alloc(32, 9).toString("base64");
+process.env.WEB_ORIGIN = "http://localhost:5173";
+process.env.PUBLIC_BASE_URL = "http://localhost:3000";
+process.env.PUBLIC_WEB_URL = "http://localhost:5173";
+process.env.JWT_ACCESS_TTL = "15m";
+process.env.JWT_REFRESH_TTL = "7d";
+process.env.UPLOAD_DIR = "uploads";
+delete process.env.APPLE_PASS_TYPE_IDENTIFIER;
+delete process.env.APPLE_TEAM_IDENTIFIER;
+delete process.env.APPLE_WWDR_CERT_PATH;
+delete process.env.APPLE_SIGNER_CERT_PATH;
+delete process.env.APPLE_SIGNER_KEY_PATH;
+delete process.env.GOOGLE_WALLET_ISSUER_ID;
+delete process.env.GOOGLE_WALLET_CLIENT_EMAIL;
+delete process.env.GOOGLE_WALLET_PRIVATE_KEY;
+delete process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_FILE;

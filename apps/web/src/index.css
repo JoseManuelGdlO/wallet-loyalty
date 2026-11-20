@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #102033;
+  background: #e7eef2;
+  font-family: Outfit, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(165, 107, 42, 0.16), transparent 28%),
+    #e7eef2;
+}
+
+button, input, select, textarea { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid #0e6b62;
+  outline-offset: 2px;
+}
+
+.stamp {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+}
+.stamp.on {
+  background: radial-gradient(circle at 35% 30%, #f3e2c4, #c49245 55%, #8d5a1e);
+  color: #102033;
+  box-shadow: inset 0 0 0 3px rgba(16, 32, 51, 0.18);
+}
+.stamp.off {
+  border: 1.5px dashed rgba(16, 32, 51, 0.28);
+  background: rgba(255, 255, 255, 0.35);
+}
+.punch-card {
+  position: relative;
+  background: #f7fafb;
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(16, 32, 51, 0.12);
+}
+.punch-card::before, .punch-card::after {
+  content: "";
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #e7eef2;
+  top: 46%;
+}
+.punch-card::before { left: -13px; }
+.punch-card::after { right: -13px; }
+.stamp-pop { animation: pop 0.55s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes pop {
+  0% { transform: scale(0.86); }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stamp-pop { animation: none; }
+}

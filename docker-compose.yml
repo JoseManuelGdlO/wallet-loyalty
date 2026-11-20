@@ -1,0 +1,78 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-loyalty}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-loyalty}
+      POSTGRES_DB: ${POSTGRES_DB:-loyalty}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-loyalty} -d ${POSTGRES_DB:-loyalty}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-loyalty}:${POSTGRES_PASSWORD:-loyalty}@postgres:5432/${POSTGRES_DB:-loyalty}
+      WEB_ORIGIN: ${DOCKER_WEB_ORIGIN:-http://localhost:8080}
+      PUBLIC_BASE_URL: ${DOCKER_PUBLIC_BASE_URL:-http://localhost:8080}
+      PUBLIC_WEB_URL: ${DOCKER_PUBLIC_WEB_URL:-http://localhost:8080}
+      UPLOAD_DIR: /app/apps/api/uploads
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Define JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Define JWT_REFRESH_SECRET}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?Define APP_ENCRYPTION_KEY}
+      APPLE_PASS_TYPE_IDENTIFIER: ${APPLE_PASS_TYPE_IDENTIFIER:-}
+      APPLE_TEAM_IDENTIFIER: ${APPLE_TEAM_IDENTIFIER:-}
+      APPLE_SIGNER_KEY_PASSPHRASE: ${APPLE_SIGNER_KEY_PASSPHRASE:-}
+      APPLE_WWDR_CERT_PATH: /certs/wwdr.pem
+      APPLE_SIGNER_CERT_PATH: /certs/signerCert.pem
+      APPLE_SIGNER_KEY_PATH: /certs/signerKey.pem
+      APPLE_WEB_SERVICE_URL: ${DOCKER_APPLE_WEB_SERVICE_URL:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/apps/api/uploads
+      - ./docker/certs:/certs:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  pgdata:
+  uploads:
