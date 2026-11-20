@@ -18,7 +18,7 @@ async function bootstrap() {
       .build(),
   );
   SwaggerModule.setup("api/docs", app, document);
-  await app.listen(getConfig().port);
+  await app.listen(getConfig().port, "0.0.0.0");
 }
 
 void bootstrap();
