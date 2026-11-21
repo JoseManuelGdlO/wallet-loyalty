@@ -25,7 +25,9 @@ describe("modelo de pases", () => {
   it("escribe el progreso en el storeCard y el QR, sin HTML", () => {
     const pass = buildStoreCardPass(visual);
     expect(pass.storeCard.headerFields[0].value).toBe("4/10");
-    expect(pass.storeCard.auxiliaryFields[0].value).toContain("●");
+    expect(pass.storeCard.primaryFields[0].value).toBe("María López");
+    expect(pass.storeCard.secondaryFields[1].value).toBe("Café americano gratis");
+    expect(pass.storeCard).not.toHaveProperty("auxiliaryFields");
     expect(pass.barcode.message).toBe("ilk_testtoken");
     expect(JSON.stringify(pass)).not.toContain("<html");
     expect(pass.authenticationToken.length).toBeGreaterThanOrEqual(16);

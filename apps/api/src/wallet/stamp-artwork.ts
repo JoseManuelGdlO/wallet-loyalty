@@ -38,7 +38,7 @@ export async function renderLogos(name: string, foreground: string, background: 
     return { logo, logo2x, logo3x };
   }
   const paint = async (width: number, height: number) =>
-    sharp(Buffer.from(logoSvg(name, foreground, background, width, height))).png().toBuffer();
+    sharp(Buffer.from(logoMarkSvg(foreground, background, width, height))).png().toBuffer();
   const [logo3x, logo2x, logo] = await Promise.all([paint(480, 150), paint(320, 100), paint(160, 50)]);
   return { logo, logo2x, logo3x };
 }
@@ -48,13 +48,14 @@ function stripSvg(
   width: number,
   height: number,
 ) {
-  const cols = Math.min(5, Math.max(1, input.required));
+  const cols = Math.min(10, Math.max(1, input.required));
   const rows = Math.ceil(input.required / cols);
-  const gap = width * 0.04;
-  const cell = Math.min((width - gap * 2) / cols, (height - gap * 2) / rows);
-  const radius = cell * 0.34;
+  const band = height * 0.34;
+  const gap = width * 0.035;
+  const cell = Math.min((width - gap * 2) / cols, band / rows);
+  const radius = cell * 0.28;
   const originX = (width - cols * cell) / 2 + cell / 2;
-  const originY = (height - rows * cell) / 2 + cell / 2;
+  const originY = height * 0.08 + cell / 2;
   const marks: string[] = [];
   for (let index = 0; index < input.required; index += 1) {
     const cx = originX + (index % cols) * cell;
@@ -83,9 +84,11 @@ function iconSvg(size: number, accent: string) {
   return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${center}" cy="${center}" r="${size * 0.46}" fill="none" stroke="${escapeXml(accent)}" stroke-width="${Math.max(1, size * 0.06)}" stroke-dasharray="${size * 0.12} ${size * 0.08}"/><circle cx="${center}" cy="${center}" r="${size * 0.16}" fill="${escapeXml(accent)}"/></svg>`;
 }
 
-function logoSvg(name: string, foreground: string, background: string, width: number, height: number) {
-  const text = escapeXml(name).slice(0, 18);
-  return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="${escapeXml(background)}"/><text x="12" y="${height * 0.68}" font-family="sans-serif" font-size="${height * 0.42}" fill="${escapeXml(foreground)}">${text}</text></svg>`;
+function logoMarkSvg(foreground: string, background: string, width: number, height: number) {
+  const radius = height * 0.28;
+  const cx = radius + width * 0.04;
+  const cy = height / 2;
+  return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="${escapeXml(background)}"/><circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${escapeXml(foreground)}" stroke-width="${Math.max(2, radius * 0.12)}" stroke-dasharray="${radius * 0.45} ${radius * 0.28}"/><circle cx="${cx}" cy="${cy}" r="${radius * 0.38}" fill="${escapeXml(foreground)}"/></svg>`;
 }
 
 function escapeXml(value: string) {

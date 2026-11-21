@@ -40,7 +40,6 @@ export function buildStoreCardPass(input: PassVisual) {
     icon: input.icon,
     rewardAvailable: input.rewardAvailable,
   });
-  const visual = stamps.slots.map((filled: boolean) => (filled ? "●" : "○")).join("");
   const barcode = {
     message: input.scanToken,
     format: "PKBarcodeFormatQR",
@@ -72,16 +71,15 @@ export function buildStoreCardPass(input: PassVisual) {
       ],
       primaryFields: [
         {
-          key: "progress",
-          label: input.rewardAvailable ? "RECOMPENSA" : "PROGRESO",
-          value: input.rewardAvailable ? input.rewardTitle : stamps.label,
+          key: "member",
+          label: "CLIENTE",
+          value: input.customerName,
         },
       ],
       secondaryFields: [
-        { key: "member", label: "CLIENTE", value: input.customerName },
         { key: "program", label: "PROGRAMA", value: input.programName },
+        { key: "reward", label: input.rewardAvailable ? "LISTA" : "RECOMPENSA", value: input.rewardTitle },
       ],
-      auxiliaryFields: [{ key: "visual", label: "TARJETA", value: visual }],
       backFields: [
         {
           key: "how",

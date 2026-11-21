@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { PublicShare } from "@/components/public-share";
 import { StampGrid } from "@/components/stamp-grid";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
@@ -100,6 +101,7 @@ export function BusinessesPage() {
               </div>
               <span className="text-sm">{business.active ? "Activo" : "Suspendido"}</span>
             </div>
+            <div className="mt-4"><PublicShare slug={business.slug} name={business.name} /></div>
             {user?.role === "SUPER_ADMIN" && (
               <Button
                 className="mt-3"
@@ -190,7 +192,72 @@ function StaffPanel({ businessId }: { businessId: string }) {
   );
 }
 
+function ProgramEditor({ program, onSaved }: { program: Program; onSaved: () => void }) {
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setError("");
+    try {
+      await api(`/api/loyalty/programs/${program.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          businessId: program.businessId,
+          name: form.get("name"),
+          description: form.get("description") || undefined,
+          stampsRequired: Number(form.get("stampsRequired")),
+          rewardTitle: form.get("rewardTitle"),
+          rewardDescription: form.get("rewardDescription") || undefined,
+          stampIcon: form.get("stampIcon") || "●",
+          cardBackground: form.get("cardBackground"),
+          cardForeground: form.get("cardForeground"),
+          cardLabel: form.get("cardLabel"),
+          maxStampsPerDay: Number(form.get("maxStampsPerDay")),
+          cooldownSeconds: Number(form.get("cooldownSeconds")),
+          blockWhenRewardAvailable: program.blockWhenRewardAvailable,
+          status: form.get("status"),
+        }),
+      });
+      setMessage("Programa actualizado. Las tarjetas nuevas y las actualizaciones de Wallet usan estos datos.");
+      onSaved();
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "No se pudo guardar");
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="mt-4 grid gap-2 border-t border-ink/10 pt-3">
+      <p className="text-sm text-ink/60">Así se ve la tarjeta en Wallet y en la página pública.</p>
+      <Input name="name" defaultValue={program.name} required />
+      <Input name="rewardTitle" defaultValue={program.rewardTitle} required />
+      <div className="grid grid-cols-2 gap-2">
+        <Input name="stampsRequired" type="number" min={1} max={50} defaultValue={program.stampsRequired} required />
+        <Input name="stampIcon" defaultValue={program.stampIcon} maxLength={8} />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <Input name="cardBackground" type="color" defaultValue={program.cardBackground} required />
+        <Input name="cardForeground" type="color" defaultValue={program.cardForeground} required />
+        <Input name="cardLabel" type="color" defaultValue={program.cardLabel} required />
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <Input name="maxStampsPerDay" type="number" min={1} defaultValue={program.maxStampsPerDay} required />
+        <Input name="cooldownSeconds" type="number" min={0} defaultValue={program.cooldownSeconds} required />
+      </div>
+      <select name="status" defaultValue={program.status} className="h-11 rounded-2xl border border-ink/10 bg-white px-3">
+        <option value="ACTIVE">Activo</option>
+        <option value="INACTIVE">Inactivo</option>
+      </select>
+      {error && <p className="text-sm text-[#9e3b32]">{error}</p>}
+      {message && <p className="text-sm text-seal">{message}</p>}
+      <Button type="submit" variant="brass">Guardar apariencia</Button>
+    </form>
+  );
+}
+
 export function ProgramsPage() {
+  const { user } = useSession();
   const [rows, setRows] = useState<Program[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [error, setError] = useState("");
@@ -244,6 +311,7 @@ export function ProgramsPage() {
               <StampGrid slots={Array.from({ length: program.stampsRequired }, () => false)} icon={program.stampIcon} />
             </div>
             <p className="mt-2 text-sm text-ink/60">{program.stampsRequired} sellos · máximo {program.maxStampsPerDay} al día · {program.status === "ACTIVE" ? "Activo" : "Inactivo"}</p>
+            {user?.role !== "EMPLOYEE" && <ProgramEditor program={program} onSaved={load} />}
           </article>
         ))}
       </div>

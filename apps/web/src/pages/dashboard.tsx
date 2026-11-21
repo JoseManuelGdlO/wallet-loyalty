@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { PublicShare } from "@/components/public-share";
 import { api } from "@/lib/api";
 import { formatWhen } from "@/lib/utils";
+import { useSession } from "@/session";
 
 type Dashboard = {
   customers: number;
@@ -16,11 +18,16 @@ type Dashboard = {
 const labels: Record<string, string> = { EARN: "Sello", REDEEM: "Canje", REVERSAL: "Reversión" };
 
 export function DashboardPage() {
+  const { user } = useSession();
   const [data, setData] = useState<Dashboard | null>(null);
+  const [businesses, setBusinesses] = useState<Array<{ id: string; name: string; slug: string }>>([]);
   const [error, setError] = useState("");
   useEffect(() => {
     api<Dashboard>("/api/analytics/dashboard").then(setData).catch((cause: Error) => setError(cause.message));
-  }, []);
+    if (user && user.role !== "EMPLOYEE") {
+      api<Array<{ id: string; name: string; slug: string }>>("/api/businesses").then(setBusinesses).catch(() => undefined);
+    }
+  }, [user]);
   if (error) return <p className="text-[#9e3b32]">{error}</p>;
   if (!data) return <p className="text-ink/60">Cargando el panel…</p>;
   const figures = [
@@ -36,6 +43,7 @@ export function DashboardPage() {
         <p className="text-sm uppercase tracking-[0.18em] text-brass">Hoy en el negocio</p>
         <h1 className="font-display text-4xl">Actividad de lealtad</h1>
       </header>
+      {businesses.map((business) => <PublicShare key={business.id} slug={business.slug} name={business.name} />)}
       <section className="grid gap-3 sm:grid-cols-5">
         {figures.map(([label, value]) => (
           <article key={String(label)} className="rounded-3xl bg-paper px-4 py-4 shadow-card">
