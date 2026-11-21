@@ -40,6 +40,9 @@ services:
       APPLE_WWDR_CERT_PATH: /certs/wwdr.pem
       APPLE_SIGNER_CERT_PATH: /certs/signerCert.pem
       APPLE_SIGNER_KEY_PATH: /certs/signerKey.pem
+      APPLE_WWDR_CERT_BASE64: ${APPLE_WWDR_CERT_BASE64:-}
+      APPLE_SIGNER_CERT_BASE64: ${APPLE_SIGNER_CERT_BASE64:-}
+      APPLE_SIGNER_KEY_BASE64: ${APPLE_SIGNER_KEY_BASE64:-}
       APPLE_WEB_SERVICE_URL: ${DOCKER_APPLE_WEB_SERVICE_URL:-}
     depends_on:
       postgres:

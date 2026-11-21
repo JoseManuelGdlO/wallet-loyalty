@@ -1,11 +1,13 @@
 import "./load-env";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { materializeAppleCerts } from "./apple-certs";
 import { AppModule } from "./app.module";
 import { getConfig } from "./config/configuration";
 import { configureApp } from "./configure-app";
 
 async function bootstrap() {
+  materializeAppleCerts();
   const app = await NestFactory.create(AppModule);
   configureApp(app);
   const document = SwaggerModule.createDocument(

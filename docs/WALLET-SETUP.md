@@ -26,6 +26,8 @@ APPLE_SIGNER_KEY_PASSPHRASE=
 APPLE_WEB_SERVICE_URL=https://tu-dominio/api/wallet/apple
 ```
 
+En EasyPanel no subas los `.pem` al repositorio. Codifica cada archivo en Base64 y pégalo en `APPLE_WWDR_CERT_BASE64`, `APPLE_SIGNER_CERT_BASE64` y `APPLE_SIGNER_KEY_BASE64`. Al arrancar, la API los escribe en un directorio temporal si `/certs` está vacío.
+
 `APPLE_WEB_SERVICE_URL` tiene que ser HTTPS en producción. Apple llama estas rutas, documentadas en “Adding a Web Service to Update Passes”:
 
 - `POST /v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}`
