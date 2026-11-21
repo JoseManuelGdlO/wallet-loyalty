@@ -53,6 +53,16 @@ El contenedor los lee en `/certs`. Si esa carpeta está vacía, el sello se guar
 
 El disco de `uploads` sirve logos de un solo nodo. Si más adelante hay varias réplicas, mueve las imágenes a un almacén de objetos.
 
+## Desplegar sin abrir EasyPanel
+
+Cada push a `main` llama a la URL de disparo del servicio Compose. Esa URL está en el servicio, pestaña **Deployments**, como **Deployment Trigger URL**. Cópiala una vez y guárdala como secreto del repositorio:
+
+```bash
+gh secret set EASYPANEL_DEPLOY_URL
+```
+
+Pega la URL cuando lo pida y pulsa Enter. A partir de ahí, un push a `main` redespliega el sitio. Desde esta carpeta también puedes lanzarlo con `npm run deploy` si la misma URL está en `.env` como `EASYPANEL_DEPLOY_URL`.
+
 ## Después del primer arranque
 
 Entra al contenedor del API y ejecuta el seed solo en un entorno de demostración:

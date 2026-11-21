@@ -1,0 +1,35 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Desplegar en EasyPanel
+        env:
+          DEPLOY_URL: ${{ secrets.EASYPANEL_DEPLOY_URL }}
+        run: |
+          if [ -z "$DEPLOY_URL" ]; then
+            echo "Falta el secreto EASYPANEL_DEPLOY_URL. El código está en main, pero el servidor no se redesplegó."
+            exit 1
+          fi
+          node <<'EOF'
+          const url = process.env.DEPLOY_URL;
+          async function call(method) {
+            const response = await fetch(url, { method });
+            const body = await response.text();
+            return { status: response.status, body };
+          }
+          let result = await call("POST");
+          if (result.status === 404 || result.status === 405) result = await call("GET");
+          if (result.status < 200 || result.status >= 300) {
+            console.error(`EasyPanel respondió ${result.status}`);
+            if (result.body) console.error(result.body.slice(0, 500));
+            process.exit(1);
+          }
+          console.log("EasyPanel recibió la orden de desplegar.");
+          EOF
