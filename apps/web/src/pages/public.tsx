@@ -9,6 +9,7 @@ import { ApiError, api } from "@/lib/api";
 type PublicBusiness = {
   name: string;
   description?: string | null;
+  logoUrl?: string | null;
   colors: { primary: string; secondary: string };
   programs: Array<{
     id: string;
@@ -23,6 +24,7 @@ type PublicBusiness = {
 
 type CardView = {
   businessName: string;
+  logoUrl?: string | null;
   customerName: string;
   programName: string;
   rewardTitle: string;
@@ -74,6 +76,7 @@ export function PublicBusinessPage() {
   return (
     <main className="mx-auto grid min-h-screen max-w-3xl content-center gap-6 px-4 py-10">
       <p className="text-sm uppercase tracking-[0.18em] text-brass">Tarjeta de lealtad</p>
+      {business.logoUrl && <img src={business.logoUrl} alt="" className="h-16 w-auto max-w-[220px] object-contain" />}
       <h1 className="font-display text-5xl" style={{ color: business.colors.primary }}>{business.name}</h1>
       <p className="max-w-xl text-ink/70">{business.description}</p>
       {program && (
@@ -155,6 +158,7 @@ export function PublicCardPage() {
     <main className="mx-auto grid min-h-screen max-w-md content-center gap-4 px-4 py-8">
       <article className="punch-card overflow-hidden" style={{ background: card.colors.background, color: card.colors.foreground }}>
         <div className="p-6">
+          {card.logoUrl && <img src={card.logoUrl} alt="" className="mb-3 h-12 w-auto max-w-[180px] object-contain" />}
           <p className="text-xs uppercase tracking-[0.16em]" style={{ color: card.colors.label }}>{card.businessName}</p>
           <h1 className="font-display text-4xl">{card.customerName}</h1>
           <p>{card.programName}</p>

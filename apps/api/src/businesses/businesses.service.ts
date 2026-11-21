@@ -6,6 +6,7 @@ import { DomainException } from "../common/domain.exception";
 import { HttpStatus } from "@nestjs/common";
 import { AuditService } from "../audit/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { WalletSyncService } from "../wallet/wallet-sync.service";
 import type { BusinessStatusDto, CreateBranchDto, CreateBusinessDto, CreateEmployeeDto, CreatePlanDto, UpdateBusinessDto } from "./dto";
 
 @Injectable()
@@ -13,6 +14,7 @@ export class BusinessesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly wallet: WalletSyncService,
   ) {}
 
   async list(user: AuthUser) {
@@ -103,7 +105,21 @@ export class BusinessesService {
   async update(user: AuthUser, id: string, dto: UpdateBusinessDto) {
     const business = await this.get(user, id);
     if (user.role === "EMPLOYEE") throw new ForbiddenException("No puedes editar el negocio");
-    return this.prisma.business.update({ where: { id: business.id }, data: dto });
+    const updated = await this.prisma.business.update({ where: { id: business.id }, data: dto });
+    if (dto.logoUrl && dto.logoUrl !== business.logoUrl) {
+      const cards = await this.prisma.loyaltyCard.findMany({
+        where: { businessId: business.id },
+        select: { id: true },
+      });
+      if (cards.length) {
+        await this.prisma.loyaltyCard.updateMany({
+          where: { businessId: business.id },
+          data: { updatedAt: new Date() },
+        });
+        await Promise.all(cards.map((card) => this.wallet.sync(card.id)));
+      }
+    }
+    return updated;
   }
 
   async setStatus(user: AuthUser, id: string, dto: BusinessStatusDto) {

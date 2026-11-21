@@ -33,6 +33,11 @@ describe("modelo de pases", () => {
     expect(pass.authenticationToken.length).toBeGreaterThanOrEqual(16);
   });
 
+  it("usa solo la imagen cuando el negocio subió su logotipo", () => {
+    const pass = buildStoreCardPass({ ...visual, hasLogo: true });
+    expect(pass.logoText).toBeUndefined();
+  });
+
   it("el objeto de Google Wallet lleva el saldo nuevo de sellos", () => {
     const object = buildLoyaltyObject({
       id: "issuer.sn_demo",

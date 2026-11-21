@@ -15,6 +15,7 @@ type Business = {
   description?: string | null;
   active: boolean;
   primaryColor: string;
+  logoUrl?: string | null;
   _count?: { customers: number; programs: number };
 };
 
@@ -102,6 +103,7 @@ export function BusinessesPage() {
               <span className="text-sm">{business.active ? "Activo" : "Suspendido"}</span>
             </div>
             <div className="mt-4"><PublicShare slug={business.slug} name={business.name} /></div>
+            {user?.role !== "EMPLOYEE" && <LogoUpload business={business} />}
             {user?.role === "SUPER_ADMIN" && (
               <Button
                 className="mt-3"
@@ -137,6 +139,52 @@ export function BusinessesPage() {
           <Button className="md:col-span-2">Crear negocio</Button>
         </form>
       )}
+    </div>
+  );
+}
+
+function LogoUpload({ business }: { business: Business }) {
+  const [logo, setLogo] = useState(business.logoUrl || "");
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function onFile(file: File) {
+    const body = new FormData();
+    body.append("file", file);
+    setPending(true);
+    setError("");
+    try {
+      const uploaded = await api<{ url: string }>("/api/uploads", { method: "POST", body });
+      const updated = await api<{ logoUrl: string | null }>(`/api/businesses/${business.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ logoUrl: uploaded.url }),
+      });
+      setLogo(updated.logoUrl || uploaded.url);
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "No se pudo guardar el logotipo");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-ink/10 pt-4">
+      {logo ? <img src={logo} alt="" className="h-14 w-auto max-w-[180px] object-contain" /> : <p className="text-sm text-ink/50">Sin logotipo</p>}
+      <label className="inline-flex h-11 cursor-pointer items-center rounded-full bg-ink px-5 text-sm text-paper">
+        {pending ? "Subiendo…" : "Subir logotipo"}
+        <input
+          className="hidden"
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          disabled={pending}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void onFile(file);
+          }}
+        />
+      </label>
+      <p className="w-full text-sm text-ink/50">PNG, JPG o WebP, hasta 2 MB. Sale en la página pública y en Apple Wallet.</p>
+      {error && <p className="text-sm text-[#9e3b32]">{error}</p>}
     </div>
   );
 }

@@ -198,6 +198,7 @@ export class ApplePassService {
       passTypeIdentifier: config.apple.passTypeIdentifier,
       teamIdentifier: config.apple.teamIdentifier,
       webServiceURL: config.apple.webServiceUrl,
+      hasLogo: Boolean(logoFile),
     });
     const pkpass = new PKPass(
       {
