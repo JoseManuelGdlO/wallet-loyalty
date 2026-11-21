@@ -1,6 +1,6 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
-import express from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import fs from "fs";
 import helmet from "helmet";
 import path from "path";
@@ -21,6 +21,10 @@ export function configureApp(app: INestApplication) {
   );
   const uploadRoot = path.resolve(process.cwd(), config.uploadDir);
   fs.mkdirSync(uploadRoot, { recursive: true });
-  app.use("/api/uploads", express.static(uploadRoot, { index: false, fallthrough: false }));
+  const files = express.static(uploadRoot, { index: false, fallthrough: false });
+  app.use("/api/uploads", (req: Request, res: Response, next: NextFunction) => {
+    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    return files(req, res, next);
+  });
   app.getHttpAdapter().getInstance().set("trust proxy", 1);
 }
