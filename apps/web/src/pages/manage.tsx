@@ -276,27 +276,28 @@ function ProgramEditor({ program, onSaved }: { program: Program; onSaved: () => 
   }
 
   return (
-    <form onSubmit={save} className="mt-4 grid gap-2 border-t border-ink/10 pt-3">
-      <p className="text-sm text-ink/60">Así se ve la tarjeta en Wallet y en la página pública.</p>
-      <Input name="name" defaultValue={program.name} required />
-      <Input name="rewardTitle" defaultValue={program.rewardTitle} required />
-      <div className="grid grid-cols-2 gap-2">
-        <Input name="stampsRequired" type="number" min={1} max={50} defaultValue={program.stampsRequired} required />
-        <Input name="stampIcon" defaultValue={program.stampIcon} maxLength={8} />
+    <form onSubmit={save} className="mt-4 grid gap-3 border-t border-ink/10 pt-3">
+      <Field label="Nombre del programa"><Input name="name" defaultValue={program.name} required /></Field>
+      <Field label="Recompensa"><Input name="rewardTitle" defaultValue={program.rewardTitle} required /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Sellos para ganarla"><Input name="stampsRequired" type="number" min={1} max={50} defaultValue={program.stampsRequired} required /></Field>
+        <Field label="Icono del sello"><Input name="stampIcon" defaultValue={program.stampIcon} maxLength={8} /></Field>
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <Input name="cardBackground" type="color" defaultValue={program.cardBackground} required />
-        <Input name="cardForeground" type="color" defaultValue={program.cardForeground} required />
-        <Input name="cardLabel" type="color" defaultValue={program.cardLabel} required />
+      <div className="grid grid-cols-3 gap-3">
+        <Field label="Fondo de la tarjeta"><Input name="cardBackground" type="color" defaultValue={program.cardBackground} required /></Field>
+        <Field label="Color del texto"><Input name="cardForeground" type="color" defaultValue={program.cardForeground} required /></Field>
+        <Field label="Color de los sellos"><Input name="cardLabel" type="color" defaultValue={program.cardLabel} required /></Field>
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <Input name="maxStampsPerDay" type="number" min={1} defaultValue={program.maxStampsPerDay} required />
-        <Input name="cooldownSeconds" type="number" min={0} defaultValue={program.cooldownSeconds} required />
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Máximo de sellos por día"><Input name="maxStampsPerDay" type="number" min={1} defaultValue={program.maxStampsPerDay} required /></Field>
+        <Field label="Segundos de espera entre sellos"><Input name="cooldownSeconds" type="number" min={0} defaultValue={program.cooldownSeconds} required /></Field>
       </div>
-      <select name="status" defaultValue={program.status} className="h-11 rounded-2xl border border-ink/10 bg-white px-3">
-        <option value="ACTIVE">Activo</option>
-        <option value="INACTIVE">Inactivo</option>
-      </select>
+      <Field label="Estado">
+        <select name="status" defaultValue={program.status} className="h-11 rounded-2xl border border-ink/10 bg-white px-3">
+          <option value="ACTIVE">Activo, los clientes pueden registrarse</option>
+          <option value="INACTIVE">Inactivo, no acepta registros nuevos</option>
+        </select>
+      </Field>
       {error && <p className="text-sm text-[#9e3b32]">{error}</p>}
       {message && <p className="text-sm text-seal">{message}</p>}
       <Button type="submit" variant="brass">Guardar apariencia</Button>
@@ -370,15 +371,15 @@ export function ProgramsPage() {
             {businesses.map((business) => <option key={business.id} value={business.id}>{business.name}</option>)}
           </select>
         </Field>
-        <Field label="Nombre"><Input name="name" required defaultValue="Café frecuente" /></Field>
-        <Field label="Sellos"><Input name="stampsRequired" type="number" min={1} max={50} defaultValue={10} required /></Field>
+        <Field label="Nombre del programa"><Input name="name" required defaultValue="Café frecuente" /></Field>
+        <Field label="Sellos para ganarla"><Input name="stampsRequired" type="number" min={1} max={50} defaultValue={10} required /></Field>
         <Field label="Recompensa"><Input name="rewardTitle" required defaultValue="Café americano gratis" /></Field>
-        <Field label="Ícono"><Input name="stampIcon" defaultValue="☕" maxLength={8} /></Field>
-        <Field label="Máximo por día"><Input name="maxStampsPerDay" type="number" min={1} defaultValue={5} required /></Field>
-        <Field label="Segundos entre sellos"><Input name="cooldownSeconds" type="number" min={0} defaultValue={90} required /></Field>
-        <Field label="Fondo"><Input name="cardBackground" defaultValue="#102033" required /></Field>
-        <Field label="Texto"><Input name="cardForeground" defaultValue="#F4F7F8" required /></Field>
-        <Field label="Sello"><Input name="cardLabel" defaultValue="#E0B15A" required /></Field>
+        <Field label="Icono del sello"><Input name="stampIcon" defaultValue="☕" maxLength={8} /></Field>
+        <Field label="Máximo de sellos por día"><Input name="maxStampsPerDay" type="number" min={1} defaultValue={5} required /></Field>
+        <Field label="Segundos de espera entre sellos"><Input name="cooldownSeconds" type="number" min={0} defaultValue={90} required /></Field>
+        <Field label="Fondo de la tarjeta"><Input name="cardBackground" defaultValue="#102033" required /></Field>
+        <Field label="Color del texto"><Input name="cardForeground" defaultValue="#F4F7F8" required /></Field>
+        <Field label="Color de los sellos"><Input name="cardLabel" defaultValue="#E0B15A" required /></Field>
         <Field label="Descripción"><Textarea name="description" defaultValue="Compra 10 cafés y recibe uno gratis." /></Field>
         <Field label="Detalle de la recompensa"><Textarea name="rewardDescription" /></Field>
         <Button className="md:col-span-2">Guardar programa</Button>
