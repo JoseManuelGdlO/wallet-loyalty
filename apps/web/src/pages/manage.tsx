@@ -240,9 +240,85 @@ function StaffPanel({ businessId }: { businessId: string }) {
   );
 }
 
-function ProgramEditor({ program, onSaved }: { program: Program; onSaved: () => void }) {
+type Draft = {
+  name: string;
+  rewardTitle: string;
+  stampsRequired: string;
+  stampIcon: string;
+  cardBackground: string;
+  cardForeground: string;
+  cardLabel: string;
+  maxStampsPerDay: string;
+  cooldownSeconds: string;
+  status: string;
+};
+
+function draftFrom(program: Program): Draft {
+  return {
+    name: program.name,
+    rewardTitle: program.rewardTitle,
+    stampsRequired: String(program.stampsRequired),
+    stampIcon: program.stampIcon,
+    cardBackground: program.cardBackground,
+    cardForeground: program.cardForeground,
+    cardLabel: program.cardLabel,
+    maxStampsPerDay: String(program.maxStampsPerDay),
+    cooldownSeconds: String(program.cooldownSeconds),
+    status: program.status,
+  };
+}
+
+function CardPreview({ draft, businessName, logoUrl }: { draft: Draft; businessName?: string; logoUrl?: string | null }) {
+  const total = Math.min(50, Math.max(1, Number(draft.stampsRequired) || 1));
+  const filled = total === 1 ? 1 : Math.min(total - 1, Math.max(1, Math.round(total * 0.4)));
+  const icon = draft.stampIcon || "●";
+  return (
+    <div>
+      <p className="mb-2 text-sm text-ink/60">Vista previa</p>
+      <article className="overflow-hidden rounded-[22px] shadow-card" style={{ background: draft.cardBackground, color: draft.cardForeground }}>
+        <div className="p-5">
+          {logoUrl && <img src={logoUrl} alt="" className="mb-3 h-10 w-auto max-w-[160px] object-contain" />}
+          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: draft.cardLabel }}>{businessName || "Tu negocio"}</p>
+          <h3 className="font-display text-3xl">{draft.name || "Programa"}</h3>
+          <div className="my-4 flex flex-wrap gap-1.5" aria-hidden>
+            {Array.from({ length: total }, (_, index) => (
+              <span
+                key={index}
+                className="grid h-8 w-8 place-items-center rounded-full text-sm"
+                style={index < filled
+                  ? { background: draft.cardLabel, color: draft.cardBackground }
+                  : { boxShadow: `inset 0 0 0 1.5px ${draft.cardLabel}` }}
+              >
+                {index < filled ? icon : ""}
+              </span>
+            ))}
+          </div>
+          <p className="text-sm" style={{ color: draft.cardLabel }}>{filled} de {total} sellos</p>
+          <p className="mt-1">{draft.rewardTitle || "Recompensa"}</p>
+        </div>
+      </article>
+    </div>
+  );
+}
+
+function ProgramEditor({
+  program,
+  businessName,
+  logoUrl,
+  onSaved,
+}: {
+  program: Program;
+  businessName?: string;
+  logoUrl?: string | null;
+  onSaved: () => void;
+}) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [draft, setDraft] = useState(() => draftFrom(program));
+
+  function setField(name: keyof Draft, value: string) {
+    setDraft((current) => ({ ...current, [name]: value }));
+  }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -276,24 +352,26 @@ function ProgramEditor({ program, onSaved }: { program: Program; onSaved: () => 
   }
 
   return (
-    <form onSubmit={save} className="mt-4 grid gap-3 border-t border-ink/10 pt-3">
-      <Field label="Nombre del programa"><Input name="name" defaultValue={program.name} required /></Field>
-      <Field label="Recompensa"><Input name="rewardTitle" defaultValue={program.rewardTitle} required /></Field>
+    <form onSubmit={save} className="mt-4 grid gap-4 border-t border-ink/10 pt-3 lg:grid-cols-[260px_1fr] lg:items-start">
+      <CardPreview draft={draft} businessName={businessName} logoUrl={logoUrl} />
+      <div className="grid gap-3">
+      <Field label="Nombre del programa"><Input name="name" value={draft.name} onChange={(event) => setField("name", event.target.value)} required /></Field>
+      <Field label="Recompensa"><Input name="rewardTitle" value={draft.rewardTitle} onChange={(event) => setField("rewardTitle", event.target.value)} required /></Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Sellos para ganarla"><Input name="stampsRequired" type="number" min={1} max={50} defaultValue={program.stampsRequired} required /></Field>
-        <Field label="Icono del sello"><Input name="stampIcon" defaultValue={program.stampIcon} maxLength={8} /></Field>
+        <Field label="Sellos para ganarla"><Input name="stampsRequired" type="number" min={1} max={50} value={draft.stampsRequired} onChange={(event) => setField("stampsRequired", event.target.value)} required /></Field>
+        <Field label="Icono del sello"><Input name="stampIcon" value={draft.stampIcon} maxLength={8} onChange={(event) => setField("stampIcon", event.target.value)} /></Field>
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <Field label="Fondo de la tarjeta"><Input name="cardBackground" type="color" defaultValue={program.cardBackground} required /></Field>
-        <Field label="Color del texto"><Input name="cardForeground" type="color" defaultValue={program.cardForeground} required /></Field>
-        <Field label="Color de los sellos"><Input name="cardLabel" type="color" defaultValue={program.cardLabel} required /></Field>
+        <Field label="Fondo de la tarjeta"><Input name="cardBackground" type="color" value={draft.cardBackground} onChange={(event) => setField("cardBackground", event.target.value)} required /></Field>
+        <Field label="Color del texto"><Input name="cardForeground" type="color" value={draft.cardForeground} onChange={(event) => setField("cardForeground", event.target.value)} required /></Field>
+        <Field label="Color de los sellos"><Input name="cardLabel" type="color" value={draft.cardLabel} onChange={(event) => setField("cardLabel", event.target.value)} required /></Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Máximo de sellos por día"><Input name="maxStampsPerDay" type="number" min={1} defaultValue={program.maxStampsPerDay} required /></Field>
-        <Field label="Segundos de espera entre sellos"><Input name="cooldownSeconds" type="number" min={0} defaultValue={program.cooldownSeconds} required /></Field>
+        <Field label="Máximo de sellos por día"><Input name="maxStampsPerDay" type="number" min={1} value={draft.maxStampsPerDay} onChange={(event) => setField("maxStampsPerDay", event.target.value)} required /></Field>
+        <Field label="Segundos de espera entre sellos"><Input name="cooldownSeconds" type="number" min={0} value={draft.cooldownSeconds} onChange={(event) => setField("cooldownSeconds", event.target.value)} required /></Field>
       </div>
       <Field label="Estado">
-        <select name="status" defaultValue={program.status} className="h-11 rounded-2xl border border-ink/10 bg-white px-3">
+        <select name="status" value={draft.status} onChange={(event) => setField("status", event.target.value)} className="h-11 w-full rounded-2xl border border-ink/10 bg-white px-3">
           <option value="ACTIVE">Activo, los clientes pueden registrarse</option>
           <option value="INACTIVE">Inactivo, no acepta registros nuevos</option>
         </select>
@@ -301,6 +379,7 @@ function ProgramEditor({ program, onSaved }: { program: Program; onSaved: () => 
       {error && <p className="text-sm text-[#9e3b32]">{error}</p>}
       {message && <p className="text-sm text-seal">{message}</p>}
       <Button type="submit" variant="brass">Guardar apariencia</Button>
+      </div>
     </form>
   );
 }
@@ -353,14 +432,24 @@ export function ProgramsPage() {
       {error && <p className="text-[#9e3b32]">{error}</p>}
       <div className="grid gap-3 md:grid-cols-2">
         {rows.map((program) => (
-          <article key={program.id} className="rounded-3xl bg-paper p-4 shadow-card" style={{ borderTop: `6px solid ${program.cardBackground}` }}>
+          <article key={program.id} className={`rounded-3xl bg-paper p-4 shadow-card ${user?.role === "EMPLOYEE" ? "" : "md:col-span-2"}`} style={{ borderTop: `6px solid ${program.cardBackground}` }}>
             <h2 className="font-display text-2xl">{program.name}</h2>
             <p className="text-sm text-ink/70">{program.rewardTitle}</p>
-            <div className="mt-3">
-              <StampGrid slots={Array.from({ length: program.stampsRequired }, () => false)} icon={program.stampIcon} />
-            </div>
+            {user?.role === "EMPLOYEE" && (
+              <div className="mt-3">
+                <StampGrid slots={Array.from({ length: program.stampsRequired }, () => false)} icon={program.stampIcon} />
+              </div>
+            )}
             <p className="mt-2 text-sm text-ink/60">{program.stampsRequired} sellos · máximo {program.maxStampsPerDay} al día · {program.status === "ACTIVE" ? "Activo" : "Inactivo"}</p>
-            {user?.role !== "EMPLOYEE" && <ProgramEditor program={program} onSaved={load} />}
+            {user?.role !== "EMPLOYEE" && (
+              <ProgramEditor
+                key={[program.name, program.rewardTitle, program.stampsRequired, program.stampIcon, program.cardBackground, program.cardForeground, program.cardLabel, program.maxStampsPerDay, program.cooldownSeconds, program.status].join("|")}
+                program={program}
+                businessName={businesses.find((business) => business.id === program.businessId)?.name}
+                logoUrl={businesses.find((business) => business.id === program.businessId)?.logoUrl}
+                onSaved={load}
+              />
+            )}
           </article>
         ))}
       </div>
