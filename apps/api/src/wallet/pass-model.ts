@@ -70,14 +70,10 @@ export function buildStoreCardPass(input: PassVisual) {
           value: input.rewardAvailable ? "LISTA" : `${stamps.current}/${stamps.required}`,
         },
       ],
-      primaryFields: [
-        {
-          key: "member",
-          label: "CLIENTE",
-          value: input.customerName,
-        },
-      ],
       secondaryFields: [
+        { key: "member", label: "NOMBRE", value: input.customerName },
+      ],
+      auxiliaryFields: [
         { key: "program", label: "PROGRAMA", value: input.programName },
         { key: "reward", label: input.rewardAvailable ? "LISTA" : "RECOMPENSA", value: input.rewardTitle },
       ],

@@ -277,10 +277,14 @@ function CardPreview({ draft, businessName, logoUrl }: { draft: Draft; businessN
       <p className="mb-2 text-sm text-ink/60">Vista previa</p>
       <article className="overflow-hidden rounded-[22px] shadow-card" style={{ background: draft.cardBackground, color: draft.cardForeground }}>
         <div className="p-5">
-          {logoUrl && <img src={logoUrl} alt="" className="mb-3 h-10 w-auto max-w-[160px] object-contain" />}
-          <p className="text-xs uppercase tracking-[0.16em]" style={{ color: draft.cardLabel }}>{businessName || "Tu negocio"}</p>
-          <h3 className="font-display text-3xl">{draft.name || "Programa"}</h3>
-          <div className="my-4 flex flex-wrap gap-1.5" aria-hidden>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              {logoUrl && <img src={logoUrl} alt="" className="mb-2 h-10 w-auto max-w-[140px] object-contain" />}
+              <p className="text-xs uppercase tracking-[0.16em]" style={{ color: draft.cardLabel }}>{businessName || "Tu negocio"}</p>
+            </div>
+            <p className="text-right text-sm font-medium" style={{ color: draft.cardLabel }}>{filled}/{total}</p>
+          </div>
+          <div className="my-4 grid grid-cols-5 justify-items-center gap-y-2" aria-hidden>
             {Array.from({ length: total }, (_, index) => (
               <span
                 key={index}
@@ -293,8 +297,12 @@ function CardPreview({ draft, businessName, logoUrl }: { draft: Draft; businessN
               </span>
             ))}
           </div>
-          <p className="text-sm" style={{ color: draft.cardLabel }}>{filled} de {total} sellos</p>
-          <p className="mt-1">{draft.rewardTitle || "Recompensa"}</p>
+          <p className="text-xs uppercase tracking-[0.14em]" style={{ color: draft.cardLabel }}>Nombre</p>
+          <p className="font-display text-2xl leading-tight">Cliente</p>
+          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+            <p><span className="block text-xs uppercase tracking-[0.14em]" style={{ color: draft.cardLabel }}>Programa</span>{draft.name || "Programa"}</p>
+            <p><span className="block text-xs uppercase tracking-[0.14em]" style={{ color: draft.cardLabel }}>Recompensa</span>{draft.rewardTitle || "Recompensa"}</p>
+          </div>
         </div>
       </article>
     </div>
