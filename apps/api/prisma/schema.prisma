@@ -206,6 +206,7 @@ model LoyaltyProgram {
   rewardDescription        String?
   rewardImageUrl           String?
   stampIcon                String              @default("●")
+  stampIconUrl             String?
   cardBackground           String              @default("#102033")
   cardForeground           String              @default("#F4F7F8")
   cardLabel                String              @default("#E0B15A")

@@ -27,6 +27,7 @@ type Program = {
   stampsRequired: number;
   rewardTitle: string;
   stampIcon: string;
+  stampIconUrl?: string | null;
   status: string;
   maxStampsPerDay: number;
   cooldownSeconds: number;
@@ -245,6 +246,7 @@ type Draft = {
   rewardTitle: string;
   stampsRequired: string;
   stampIcon: string;
+  stampIconUrl: string;
   cardBackground: string;
   cardForeground: string;
   cardLabel: string;
@@ -253,12 +255,89 @@ type Draft = {
   status: string;
 };
 
+const STAMP_ICONS = ["☕", "⭐", "❤️", "😁", "🎁", "✨", "🦷", "🐾", "✅"];
+
+function StampIconField({
+  icon,
+  imageUrl,
+  onIcon,
+  onImage,
+}: {
+  icon: string;
+  imageUrl: string;
+  onIcon: (icon: string) => void;
+  onImage: (url: string) => void;
+}) {
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function upload(file: File) {
+    const body = new FormData();
+    body.append("file", file);
+    setPending(true);
+    setError("");
+    try {
+      const uploaded = await api<{ url: string }>("/api/uploads", { method: "POST", body });
+      onImage(uploaded.url);
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "No se pudo subir el icono");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-2">
+      <span className="text-sm text-ink/70">Icono del sello</span>
+      <div className="flex flex-wrap gap-2">
+        {STAMP_ICONS.map((choice) => (
+          <button
+            key={choice}
+            type="button"
+            aria-label={`Icono ${choice}`}
+            className={`grid h-11 w-11 place-items-center rounded-2xl border text-xl ${icon === choice && !imageUrl ? "border-ink bg-ink text-paper" : "border-ink/10 bg-white"}`}
+            onClick={() => {
+              onIcon(choice);
+              onImage("");
+            }}
+          >
+            {choice}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        {imageUrl && <img src={imageUrl} alt="" className="h-11 w-11 rounded-full object-contain" />}
+        <label className="inline-flex h-11 cursor-pointer items-center rounded-full bg-ink px-4 text-sm text-paper">
+          {pending ? "Subiendo…" : "Subir icono propio"}
+          <input
+            className="hidden"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            disabled={pending}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void upload(file);
+            }}
+          />
+        </label>
+        {imageUrl && (
+          <button type="button" className="text-sm text-ink/60 underline" onClick={() => onImage("")}>
+            Usar emoji
+          </button>
+        )}
+      </div>
+      {error && <p className="text-sm text-[#9e3b32]">{error}</p>}
+    </div>
+  );
+}
+
 function draftFrom(program: Program): Draft {
   return {
     name: program.name,
     rewardTitle: program.rewardTitle,
     stampsRequired: String(program.stampsRequired),
     stampIcon: program.stampIcon,
+    stampIconUrl: program.stampIconUrl || "",
     cardBackground: program.cardBackground,
     cardForeground: program.cardForeground,
     cardLabel: program.cardLabel,
@@ -266,6 +345,26 @@ function draftFrom(program: Program): Draft {
     cooldownSeconds: String(program.cooldownSeconds),
     status: program.status,
   };
+}
+
+function CreateStampIcon() {
+  const [icon, setIcon] = useState("☕");
+  const [imageUrl, setImageUrl] = useState("");
+  return (
+    <div className="md:col-span-2">
+      <input type="hidden" name="stampIcon" value={icon} />
+      <input type="hidden" name="stampIconUrl" value={imageUrl} />
+      <StampIconField
+        icon={icon}
+        imageUrl={imageUrl}
+        onIcon={(value) => {
+          setIcon(value);
+          setImageUrl("");
+        }}
+        onImage={setImageUrl}
+      />
+    </div>
+  );
 }
 
 function CardPreview({ draft, businessName, logoUrl }: { draft: Draft; businessName?: string; logoUrl?: string | null }) {
@@ -291,9 +390,9 @@ function CardPreview({ draft, businessName, logoUrl }: { draft: Draft; businessN
                 className="grid h-8 w-8 place-items-center rounded-full text-sm"
                 style={index < filled
                   ? { background: draft.cardLabel, color: draft.cardBackground }
-                  : { boxShadow: `inset 0 0 0 1.5px ${draft.cardLabel}` }}
+                  : { boxShadow: `inset 0 0 0 1.5px ${draft.cardLabel}`, color: draft.cardLabel }}
               >
-                {index < filled ? icon : ""}
+                {draft.stampIconUrl ? <img src={draft.stampIconUrl} alt="" className="h-5 w-5 object-contain" /> : icon}
               </span>
             ))}
           </div>
@@ -342,7 +441,8 @@ function ProgramEditor({
           stampsRequired: Number(form.get("stampsRequired")),
           rewardTitle: form.get("rewardTitle"),
           rewardDescription: form.get("rewardDescription") || undefined,
-          stampIcon: form.get("stampIcon") || "●",
+          stampIcon: draft.stampIcon || "⭐",
+          stampIconUrl: draft.stampIconUrl,
           cardBackground: form.get("cardBackground"),
           cardForeground: form.get("cardForeground"),
           cardLabel: form.get("cardLabel"),
@@ -365,10 +465,8 @@ function ProgramEditor({
       <div className="grid gap-3">
       <Field label="Nombre del programa"><Input name="name" value={draft.name} onChange={(event) => setField("name", event.target.value)} required /></Field>
       <Field label="Recompensa"><Input name="rewardTitle" value={draft.rewardTitle} onChange={(event) => setField("rewardTitle", event.target.value)} required /></Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Sellos para ganarla"><Input name="stampsRequired" type="number" min={1} max={50} value={draft.stampsRequired} onChange={(event) => setField("stampsRequired", event.target.value)} required /></Field>
-        <Field label="Icono del sello"><Input name="stampIcon" value={draft.stampIcon} maxLength={8} onChange={(event) => setField("stampIcon", event.target.value)} /></Field>
-      </div>
+      <Field label="Sellos para ganarla"><Input name="stampsRequired" type="number" min={1} max={50} value={draft.stampsRequired} onChange={(event) => setField("stampsRequired", event.target.value)} required /></Field>
+      <StampIconField icon={draft.stampIcon} imageUrl={draft.stampIconUrl} onIcon={(value) => setField("stampIcon", value)} onImage={(value) => setField("stampIconUrl", value)} />
       <div className="grid grid-cols-3 gap-3">
         <Field label="Fondo de la tarjeta"><Input name="cardBackground" type="color" value={draft.cardBackground} onChange={(event) => setField("cardBackground", event.target.value)} required /></Field>
         <Field label="Color del texto"><Input name="cardForeground" type="color" value={draft.cardForeground} onChange={(event) => setField("cardForeground", event.target.value)} required /></Field>
@@ -417,7 +515,8 @@ export function ProgramsPage() {
           stampsRequired: Number(form.get("stampsRequired")),
           rewardTitle: form.get("rewardTitle"),
           rewardDescription: form.get("rewardDescription"),
-          stampIcon: form.get("stampIcon") || "●",
+          stampIcon: form.get("stampIcon") || "☕",
+          stampIconUrl: form.get("stampIconUrl") || undefined,
           cardBackground: form.get("cardBackground"),
           cardForeground: form.get("cardForeground"),
           cardLabel: form.get("cardLabel"),
@@ -451,7 +550,7 @@ export function ProgramsPage() {
             <p className="mt-2 text-sm text-ink/60">{program.stampsRequired} sellos · máximo {program.maxStampsPerDay} al día · {program.status === "ACTIVE" ? "Activo" : "Inactivo"}</p>
             {user?.role !== "EMPLOYEE" && (
               <ProgramEditor
-                key={[program.name, program.rewardTitle, program.stampsRequired, program.stampIcon, program.cardBackground, program.cardForeground, program.cardLabel, program.maxStampsPerDay, program.cooldownSeconds, program.status].join("|")}
+                key={[program.name, program.rewardTitle, program.stampsRequired, program.stampIcon, program.stampIconUrl, program.cardBackground, program.cardForeground, program.cardLabel, program.maxStampsPerDay, program.cooldownSeconds, program.status].join("|")}
                 program={program}
                 businessName={businesses.find((business) => business.id === program.businessId)?.name}
                 logoUrl={businesses.find((business) => business.id === program.businessId)?.logoUrl}
@@ -471,7 +570,7 @@ export function ProgramsPage() {
         <Field label="Nombre del programa"><Input name="name" required defaultValue="Café frecuente" /></Field>
         <Field label="Sellos para ganarla"><Input name="stampsRequired" type="number" min={1} max={50} defaultValue={10} required /></Field>
         <Field label="Recompensa"><Input name="rewardTitle" required defaultValue="Café americano gratis" /></Field>
-        <Field label="Icono del sello"><Input name="stampIcon" defaultValue="☕" maxLength={8} /></Field>
+        <CreateStampIcon />
         <Field label="Máximo de sellos por día"><Input name="maxStampsPerDay" type="number" min={1} defaultValue={5} required /></Field>
         <Field label="Segundos de espera entre sellos"><Input name="cooldownSeconds" type="number" min={0} defaultValue={90} required /></Field>
         <Field label="Fondo de la tarjeta"><Input name="cardBackground" defaultValue="#102033" required /></Field>

@@ -56,7 +56,7 @@ export function buildStoreCardPass(input: PassVisual) {
     authenticationToken: input.authenticationToken,
     organizationName: input.businessName,
     description: `${input.programName} · ${input.businessName}`,
-    ...(input.hasLogo ? {} : { logoText: input.businessName.slice(0, 20) }),
+    logoText: input.businessName.slice(0, 30),
     foregroundColor: hexToRgb(input.foreground),
     backgroundColor: hexToRgb(input.background),
     labelColor: hexToRgb(input.label),

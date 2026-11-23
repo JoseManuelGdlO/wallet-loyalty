@@ -163,12 +163,14 @@ export class ApplePassService {
     const { card, walletPass, config } = loaded;
     const scanToken = decryptSecret(card.publicTokenEncrypted);
     const authenticationToken = decryptSecret(walletPass.authTokenEncrypted!);
+    const iconFile = localLogo(card.program.stampIconUrl ?? null, config.uploadDir);
     const images = await renderStrip({
       current: card.currentStamps,
       required: card.program.stampsRequired,
       background: card.program.cardBackground,
       accent: card.program.cardLabel,
       icon: card.program.stampIcon,
+      iconImage: iconFile ? fs.readFileSync(iconFile) : undefined,
     });
     const icons = await renderIcons(card.program.cardLabel);
     const logoFile = localLogo(card.business.logoUrl, config.uploadDir);

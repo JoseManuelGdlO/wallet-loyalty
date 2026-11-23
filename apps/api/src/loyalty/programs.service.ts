@@ -3,11 +3,15 @@ import { Prisma } from "@prisma/client";
 import { assertBusinessAccess, scopeFor, type AuthUser } from "../common/access";
 import { DomainException } from "../common/domain.exception";
 import { PrismaService } from "../prisma/prisma.service";
+import { WalletSyncService } from "../wallet/wallet-sync.service";
 import type { UpsertProgramDto } from "./dto";
 
 @Injectable()
 export class ProgramsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wallet: WalletSyncService,
+  ) {}
 
   list(user: AuthUser) {
     return this.prisma.loyaltyProgram.findMany({
@@ -65,7 +69,7 @@ export class ProgramsService {
     if (dto.businessId !== current.businessId) {
       throw new DomainException(HttpStatus.BAD_REQUEST, "BUSINESS_MISMATCH", "El programa no cambia de negocio");
     }
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       const program = await tx.loyaltyProgram.update({
         where: { id },
         data: this.toData(current.tenantId, dto),
@@ -80,6 +84,15 @@ export class ProgramsService {
       });
       return program;
     });
+    await this.refreshPasses(id);
+    return updated;
+  }
+
+  private async refreshPasses(programId: string) {
+    const cards = await this.prisma.loyaltyCard.findMany({ where: { programId }, select: { id: true } });
+    if (!cards.length) return;
+    await this.prisma.loyaltyCard.updateMany({ where: { programId }, data: { updatedAt: new Date() } });
+    await Promise.all(cards.map((card) => this.wallet.sync(card.id)));
   }
 
   private toData(tenantId: string, dto: UpsertProgramDto): Prisma.LoyaltyProgramUncheckedCreateInput {
@@ -93,6 +106,7 @@ export class ProgramsService {
       rewardDescription: dto.rewardDescription,
       rewardImageUrl: dto.rewardImageUrl,
       stampIcon: dto.stampIcon || "●",
+      stampIconUrl: dto.stampIconUrl?.trim() || null,
       cardBackground: dto.cardBackground,
       cardForeground: dto.cardForeground,
       cardLabel: dto.cardLabel,

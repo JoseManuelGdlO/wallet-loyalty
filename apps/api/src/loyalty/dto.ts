@@ -48,8 +48,14 @@ export class UpsertProgramDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(8)
+  @MaxLength(16)
   stampIcon?: string;
+
+  @IsOptional()
+  @Transform(emptyToUndefined)
+  @IsString()
+  @MaxLength(500)
+  stampIconUrl?: string;
 
   @IsHexColor()
   cardBackground!: string;

@@ -35,7 +35,7 @@ describe("modelo de pases", () => {
 
   it("usa solo la imagen cuando el negocio subió su logotipo", () => {
     const pass = buildStoreCardPass({ ...visual, hasLogo: true });
-    expect(pass.logoText).toBeUndefined();
+    expect(pass.logoText).toBe("Cafetería Demo");
   });
 
   it("el objeto de Google Wallet lleva el saldo nuevo de sellos", () => {
