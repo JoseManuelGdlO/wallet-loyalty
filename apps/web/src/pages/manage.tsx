@@ -104,6 +104,7 @@ export function BusinessesPage() {
               <span className="text-sm">{business.active ? "Activo" : "Suspendido"}</span>
             </div>
             <div className="mt-4"><PublicShare slug={business.slug} name={business.name} /></div>
+            {user?.role !== "EMPLOYEE" && <BusinessNameEditor business={business} onSaved={load} />}
             {user?.role !== "EMPLOYEE" && <LogoUpload business={business} />}
             {user?.role === "SUPER_ADMIN" && (
               <Button
@@ -141,6 +142,45 @@ export function BusinessesPage() {
         </form>
       )}
     </div>
+  );
+}
+
+function BusinessNameEditor({ business, onSaved }: { business: Business; onSaved: () => void }) {
+  const [name, setName] = useState(business.name);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [pending, setPending] = useState(false);
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError("");
+    setMessage("");
+    try {
+      await api(`/api/businesses/${business.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      setMessage("Nombre actualizado");
+      onSaved();
+    } catch (cause) {
+      setError(cause instanceof ApiError ? cause.message : "No se pudo guardar el nombre");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form onSubmit={save} className="mt-4 grid gap-2 border-t border-ink/10 pt-4">
+      <Field label="Nombre del negocio">
+        <Input value={name} minLength={2} required onChange={(event) => setName(event.target.value)} />
+      </Field>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" disabled={pending || name.trim() === business.name}>{pending ? "Guardando…" : "Guardar nombre"}</Button>
+        {message && <p className="text-sm text-seal">{message}</p>}
+        {error && <p className="text-sm text-[#9e3b32]">{error}</p>}
+      </div>
+    </form>
   );
 }
 

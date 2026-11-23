@@ -105,21 +105,30 @@ export class BusinessesService {
   async update(user: AuthUser, id: string, dto: UpdateBusinessDto) {
     const business = await this.get(user, id);
     if (user.role === "EMPLOYEE") throw new ForbiddenException("No puedes editar el negocio");
-    const updated = await this.prisma.business.update({ where: { id: business.id }, data: dto });
-    if (dto.logoUrl && dto.logoUrl !== business.logoUrl) {
-      const cards = await this.prisma.loyaltyCard.findMany({
-        where: { businessId: business.id },
-        select: { id: true },
-      });
-      if (cards.length) {
-        await this.prisma.loyaltyCard.updateMany({
-          where: { businessId: business.id },
-          data: { updatedAt: new Date() },
-        });
-        await Promise.all(cards.map((card) => this.wallet.sync(card.id)));
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.business.update({ where: { id: business.id }, data: dto });
+      if (dto.name && dto.name !== business.name) {
+        await tx.tenant.update({ where: { id: business.tenantId }, data: { name: dto.name } });
       }
+      return row;
+    });
+    if ((dto.logoUrl && dto.logoUrl !== business.logoUrl) || (dto.name && dto.name !== business.name)) {
+      await this.refreshCards(business.id);
     }
     return updated;
+  }
+
+  private async refreshCards(businessId: string) {
+    const cards = await this.prisma.loyaltyCard.findMany({
+      where: { businessId },
+      select: { id: true },
+    });
+    if (!cards.length) return;
+    await this.prisma.loyaltyCard.updateMany({
+      where: { businessId },
+      data: { updatedAt: new Date() },
+    });
+    await Promise.all(cards.map((card) => this.wallet.sync(card.id)));
   }
 
   async setStatus(user: AuthUser, id: string, dto: BusinessStatusDto) {
