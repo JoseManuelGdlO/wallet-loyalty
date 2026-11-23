@@ -371,37 +371,35 @@ function CardPreview({ draft, businessName, logoUrl }: { draft: Draft; businessN
   const total = Math.min(50, Math.max(1, Number(draft.stampsRequired) || 1));
   const filled = total === 1 ? 1 : Math.min(total - 1, Math.max(1, Math.round(total * 0.4)));
   const icon = draft.stampIcon || "●";
+  const left = Math.max(total - filled, 0);
+  const reward = draft.rewardTitle || "la recompensa";
+  const phrase = left === 0 ? `Recompensa lista: ${reward}` : left === 1 ? `Te falta 1 sello para ${reward}` : `Te faltan ${left} sellos para ${reward}`;
   return (
     <div>
       <p className="mb-2 text-sm text-ink/60">Vista previa</p>
       <article className="overflow-hidden rounded-[22px] shadow-card" style={{ background: draft.cardBackground, color: draft.cardForeground }}>
         <div className="p-5">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {logoUrl
+              ? <img src={logoUrl} alt="" className="h-12 w-12 rounded-full object-cover" />
+              : <span className="grid h-12 w-12 place-items-center rounded-full text-lg" style={{ background: draft.cardLabel, color: draft.cardBackground }}>{(businessName || "N").slice(0, 1)}</span>}
             <div>
-              {logoUrl && <img src={logoUrl} alt="" className="mb-2 h-10 w-auto max-w-[140px] object-contain" />}
-              <p className="text-xs uppercase tracking-[0.16em]" style={{ color: draft.cardLabel }}>{businessName || "Tu negocio"}</p>
+              <p className="font-display text-xl leading-tight">{businessName || "Tu negocio"}</p>
+              <p className="text-sm opacity-80">{draft.name || "Programa"}</p>
             </div>
-            <p className="text-right text-sm font-medium" style={{ color: draft.cardLabel }}>{filled}/{total}</p>
           </div>
           <div className="my-4 grid grid-cols-5 justify-items-center gap-y-2" aria-hidden>
             {Array.from({ length: total }, (_, index) => (
               <span
                 key={index}
                 className="grid h-8 w-8 place-items-center rounded-full text-sm"
-                style={index < filled
-                  ? { background: draft.cardLabel, color: draft.cardBackground }
-                  : { boxShadow: `inset 0 0 0 1.5px ${draft.cardLabel}`, color: draft.cardLabel }}
+                style={index < filled ? { background: draft.cardLabel, color: draft.cardBackground } : { color: draft.cardLabel }}
               >
-                {draft.stampIconUrl ? <img src={draft.stampIconUrl} alt="" className="h-5 w-5 object-contain" /> : icon}
+                {draft.stampIconUrl ? <img src={draft.stampIconUrl} alt="" className={`h-5 w-5 object-contain ${index < filled ? "" : "opacity-45"}`} /> : icon}
               </span>
             ))}
           </div>
-          <p className="text-xs uppercase tracking-[0.14em]" style={{ color: draft.cardLabel }}>Nombre</p>
-          <p className="font-display text-2xl leading-tight">Cliente</p>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-            <p><span className="block text-xs uppercase tracking-[0.14em]" style={{ color: draft.cardLabel }}>Programa</span>{draft.name || "Programa"}</p>
-            <p><span className="block text-xs uppercase tracking-[0.14em]" style={{ color: draft.cardLabel }}>Recompensa</span>{draft.rewardTitle || "Recompensa"}</p>
-          </div>
+          <p className="text-sm">{phrase}</p>
         </div>
       </article>
     </div>

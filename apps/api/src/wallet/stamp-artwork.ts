@@ -52,16 +52,17 @@ export async function renderIcons(accent: string) {
 }
 
 export async function renderLogos(name: string, foreground: string, background: string, source?: Buffer) {
-  if (source) {
-    const logo3x = await sharp(source).resize(480, 150, { fit: "contain", background }).png().toBuffer();
-    const logo2x = await sharp(logo3x).resize(320, 100).png().toBuffer();
-    const logo = await sharp(logo3x).resize(160, 50).png().toBuffer();
-    return { logo, logo2x, logo3x };
-  }
-  const paint = async (width: number, height: number) =>
-    sharp(Buffer.from(logoMarkSvg(foreground, background, width, height))).png().toBuffer();
-  const [logo3x, logo2x, logo] = await Promise.all([paint(480, 150), paint(320, 100), paint(160, 50)]);
+  const paint = (size: number) => source ? circleImage(source, size) : sharp(Buffer.from(logoBadgeSvg(foreground, background, size))).png().toBuffer();
+  const [logo3x, logo2x, logo] = await Promise.all([paint(150), paint(100), paint(50)]);
   return { logo, logo2x, logo3x };
+}
+
+async function circleImage(source: Buffer, size: number) {
+  const resized = await sharp(source).resize(size, size, { fit: "cover" }).png().toBuffer();
+  const mask = await sharp(Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - 1}" fill="#fff"/></svg>`,
+  )).png().toBuffer();
+  return sharp(resized).ensureAlpha().composite([{ input: mask, blend: "dest-in" }]).png().toBuffer();
 }
 
 type StampSpot = { cx: number; cy: number; radius: number; filled: boolean };
@@ -102,7 +103,7 @@ function stripSvg(
   const marks = input.spots.map((spot) => {
     const ring = spot.filled
       ? `<circle cx="${spot.cx}" cy="${spot.cy}" r="${spot.radius}" fill="${input.accent}"/>`
-      : `<circle cx="${spot.cx}" cy="${spot.cy}" r="${spot.radius}" fill="none" stroke="${input.accent}" stroke-width="${Math.max(4, spot.radius * 0.08)}"/>`;
+      : "";
     const glyph = input.drawGlyph ? mark(input.glyph, spot.cx, spot.cy, spot.radius, spot.filled ? ink : input.accent) : "";
     return ring + glyph;
   });
@@ -158,11 +159,10 @@ function iconSvg(size: number, accent: string) {
   return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${center}" cy="${center}" r="${size * 0.46}" fill="none" stroke="${escapeXml(accent)}" stroke-width="${Math.max(1, size * 0.06)}" stroke-dasharray="${size * 0.12} ${size * 0.08}"/><circle cx="${center}" cy="${center}" r="${size * 0.16}" fill="${escapeXml(accent)}"/></svg>`;
 }
 
-function logoMarkSvg(foreground: string, background: string, width: number, height: number) {
-  const radius = height * 0.28;
-  const cx = radius + width * 0.04;
-  const cy = height / 2;
-  return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="${escapeXml(background)}"/><circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${escapeXml(foreground)}" stroke-width="${Math.max(2, radius * 0.12)}" stroke-dasharray="${radius * 0.45} ${radius * 0.28}"/><circle cx="${cx}" cy="${cy}" r="${radius * 0.38}" fill="${escapeXml(foreground)}"/></svg>`;
+function logoBadgeSvg(foreground: string, background: string, size: number) {
+  const center = size / 2;
+  const radius = size * 0.46;
+  return `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${center}" cy="${center}" r="${radius}" fill="${escapeXml(foreground)}"/><circle cx="${center}" cy="${center}" r="${radius * 0.42}" fill="${escapeXml(background)}"/></svg>`;
 }
 
 function escapeXml(value: string) {

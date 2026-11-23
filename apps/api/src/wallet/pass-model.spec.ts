@@ -24,10 +24,14 @@ const visual = {
 describe("modelo de pases", () => {
   it("escribe el progreso en el storeCard y el QR, sin HTML", () => {
     const pass = buildStoreCardPass(visual);
-    expect(pass.storeCard.headerFields[0].value).toBe("4/10");
-    expect(pass.storeCard.secondaryFields[0]).toMatchObject({ label: "NOMBRE", value: "María López" });
-    expect(pass.storeCard.auxiliaryFields[1].value).toBe("Café americano gratis");
+    expect(pass.logoText).toBe("Cafetería Demo");
+    expect(pass.storeCard.secondaryFields[0]).toMatchObject({
+      label: "Café frecuente",
+      value: "Te faltan 6 sellos para Café americano gratis",
+    });
+    expect(pass.storeCard.backFields[0]).toMatchObject({ label: "Cliente", value: "María López" });
     expect(pass.storeCard).not.toHaveProperty("primaryFields");
+    expect(pass.storeCard).not.toHaveProperty("headerFields");
     expect(pass.barcode.message).toBe("ilk_testtoken");
     expect(JSON.stringify(pass)).not.toContain("<html");
     expect(pass.authenticationToken.length).toBeGreaterThanOrEqual(16);

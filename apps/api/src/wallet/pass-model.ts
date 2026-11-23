@@ -41,6 +41,12 @@ export function buildStoreCardPass(input: PassVisual) {
     icon: input.icon,
     rewardAvailable: input.rewardAvailable,
   });
+  const remaining = Math.max(input.required - stamps.current, 0);
+  const progress = input.rewardAvailable || remaining === 0
+    ? `Recompensa lista: ${input.rewardTitle}`
+    : remaining === 1
+      ? `Te falta 1 sello para ${input.rewardTitle}`
+      : `Te faltan ${remaining} sellos para ${input.rewardTitle}`;
   const barcode = {
     message: input.scanToken,
     format: "PKBarcodeFormatQR",
@@ -63,21 +69,11 @@ export function buildStoreCardPass(input: PassVisual) {
     barcode,
     barcodes: [barcode],
     storeCard: {
-      headerFields: [
-        {
-          key: "stamps",
-          label: "SELLOS",
-          value: input.rewardAvailable ? "LISTA" : `${stamps.current}/${stamps.required}`,
-        },
-      ],
       secondaryFields: [
-        { key: "member", label: "NOMBRE", value: input.customerName },
-      ],
-      auxiliaryFields: [
-        { key: "program", label: "PROGRAMA", value: input.programName },
-        { key: "reward", label: input.rewardAvailable ? "LISTA" : "RECOMPENSA", value: input.rewardTitle },
+        { key: "progress", label: input.programName, value: progress },
       ],
       backFields: [
+        { key: "member", label: "Cliente", value: input.customerName },
         {
           key: "how",
           label: "Cómo usarla",
